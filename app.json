@@ -27,6 +27,12 @@
           "name": "Total",
           "type": "Currency"
         }
+      ],
+      "validations": [
+        {
+          "name": "PositiveTotal",
+          "condition":"Total>0"
+        }
       ]
     }
   ]

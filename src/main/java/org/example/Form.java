@@ -3,6 +3,7 @@ import java.util.List;
 public class Form {
     private String name;
     private List<Field>fields;
+    private List<Validation>validations;
     public String getName(){
         return name;
     }
@@ -14,5 +15,11 @@ public class Form {
     }
     public void setFields(List<Field>fields){
         this.fields = fields;
+    }
+    public List<Validation> getValidations(){
+        return validations;
+    }
+    public void setValidations(List<Validation> validations){
+        this.validations = validations;
     }
 }
