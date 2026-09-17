@@ -1,12 +1,8 @@
 package org.example;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.File;
-
 public class Main {
     public static void main(String[] args)throws Exception {
-            ObjectMapper mapper = new ObjectMapper();
-            App app = mapper.readValue(new File("app.json"),App.class);
+          AppLoader loader = new AppLoader();
+          App app = loader.load("app.json");
             System.out.println("App name: "+app.getName());
             System.out.println();
             //Forms
