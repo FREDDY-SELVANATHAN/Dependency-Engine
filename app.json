@@ -1,0 +1,33 @@
+{
+  "name": "TestApp",
+  "forms": [
+    {
+      "name": "Customer",
+      "fields": [
+        {
+          "name": "Name",
+          "type": "text"
+        },
+        {
+          "name":"DiscountPct",
+          "type": "number"
+        }
+
+      ]
+
+    },
+    {
+      "name": "Order",
+      "fields": [
+        {
+          "name": "OrderNo",
+          "type": "text"
+        },
+        {
+          "name": "Total",
+          "type": "Currency"
+        }
+      ]
+    }
+  ]
+}
