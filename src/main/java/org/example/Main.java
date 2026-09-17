@@ -10,7 +10,7 @@ public class Main {
             System.out.println("App name: "+app.getName());
             System.out.println();
             //Forms
-            for (Form form:app.getForms()){
+            for (Form form:app.getForms()   ){
                     System.out.println("Form: "+form.getName());
                     //Fields
                     for(Field field: form.getFields()){

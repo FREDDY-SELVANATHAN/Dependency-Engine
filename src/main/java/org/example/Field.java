@@ -5,6 +5,7 @@ public class Field {
     private String type;
     private String formula;
     private String lookup;
+    private String subform;
 
     public String getName(){
         return name;
@@ -18,6 +19,10 @@ public class Field {
     public String getLookup(){
         return lookup;
     }
+    public String getSubform() {
+        return subform;
+    }
+
     public void setName(String name){
         this.name = name;
     }
@@ -30,5 +35,7 @@ public class Field {
     public void setLookup(String lookup){
         this.lookup = lookup;
     }
-
+    public void setSubform(String subform) {
+        this.subform = subform;
+    }
 }
