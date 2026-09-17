@@ -7,7 +7,7 @@ public class Form {
     public String getName(){
         return name;
     }
-    public void setName(){
+    public void setName(String name){
         this.name = name;
     }
     public List<Field> getFields(){
