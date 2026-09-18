@@ -1,0 +1,87 @@
+{
+  "name": "OrderTracker",
+  "forms": [
+    {
+      "fields": [
+        {
+          "name": "Name"
+        },
+        {
+          "name": "Tier"
+        },
+        {
+          "name": "DiscountPct"
+        }
+      ],
+      "validations": []
+    },
+
+    {
+      "name": "OrderItem",
+      "fields": [
+        {
+          "name": "Product"
+        },
+        {
+          "name": "Qty"
+        },
+        {
+          "name": "Rate"
+        },
+        {
+          "name": "LineTotal",
+          "formula": "Qty * Rate"
+        }
+      ],
+      "validations": []
+    },
+
+    {
+      "name": "Order",
+      "fields": [
+        {
+          "name": "OrderNo"
+        },
+        {
+          "name": "OrderDate"
+        },
+        {
+          "name": "Customer",
+          "lookup": "Customer"
+        },
+        {
+          "name": "Items",
+          "subform": "OrderItem"
+        },
+        {
+          "name": "SubTotal",
+          "formula": "Sum(Items.LineTotal)"
+        },
+        {
+          "name": "Discount",
+          "formula": "SubTotal * Customer.DiscountPct / 100"
+        },
+        {
+          "name": "Total",
+          "formula": "SubTotal - Discount"
+        },
+        {
+          "name": "Label",
+          "formula": "Concat(OrderNo, \" - \", Customer.Name)"
+        }
+      ],
+      "validations": [
+        {
+          "name": "PositiveTotal",
+          "condition": "Total > 0"
+        },
+        {
+          "name": "DiscountSane",
+          "condition": "Discount <= SubTotal"
+        }
+      ]
+    }
+  ],
+  "reports": [],
+  "workflows": []
+}

@@ -1,0 +1,11 @@
+{
+  "name": "OrderTracker",
+  "forms": [
+    {
+      "name": "Customer",
+      "fields": [
+        {
+          "name": "Name",
+          "type": "text"
+        }
+      ]

@@ -2,9 +2,11 @@ package org.example;
 
 public class Main {
     public static void main(String[] args)throws Exception {
+
         SyntheticAppGenerator generator = new SyntheticAppGenerator();
         App generatedApp = generator.generate(10,100);
         generator.saveAsJson(generatedApp,"generated-app.json");
+
         System.out.println("Generated synthetic app successfully!!");
 
         AppLoader loader = new AppLoader();
