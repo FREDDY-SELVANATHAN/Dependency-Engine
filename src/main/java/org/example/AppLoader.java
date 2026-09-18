@@ -1,12 +1,20 @@
 package org.example;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.IOException;
+
 public class AppLoader {
     private final ObjectMapper mapper;
 
     public AppLoader(){
         mapper = new ObjectMapper();
+        mapper.configure(
+                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+                false
+        );
     }
 
     public App load(String filePath) {

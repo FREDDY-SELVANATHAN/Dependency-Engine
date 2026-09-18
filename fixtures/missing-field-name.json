@@ -9,9 +9,11 @@
           "type": "text"
         },
         {
+          "name": "Tier",
           "type": "picklist"
         },
         {
+          "name": "DiscountPct",
           "type": "number"
         }
       ],
@@ -22,15 +24,19 @@
       "name": "OrderItem",
       "fields": [
         {
+          "name": "Product",
           "type": "text"
         },
         {
+          "name": "Qty",
           "type": "number"
         },
         {
+          "name": "Rate",
           "type": "currency"
         },
         {
+          "name": "LineTotal",
           "type": "currency",
           "formula": "Qty * Rate"
         }
@@ -42,32 +48,40 @@
       "name": "Order",
       "fields": [
         {
+          "name": "OrderNo",
           "type": "text"
         },
         {
+          "name": "OrderDate",
           "type": "date"
         },
         {
+          "name": "Customer",
           "type": "lookup",
           "lookup": "Customer"
         },
         {
+          "name": "Items",
           "type": "subform",
           "subform": "OrderItem"
         },
         {
+          "name": "SubTotal",
           "type": "currency",
           "formula": "Sum(Items.LineTotal)"
         },
         {
+          "name": "Discount",
           "type": "currency",
           "formula": "SubTotal * Customer.DiscountPct / 100"
         },
         {
+          "name": "Total",
           "type": "currency",
           "formula": "SubTotal - Discount"
         },
         {
+          "name": "Label",
           "type": "text",
           "formula": "Concat(OrderNo, \" - \", Customer.Name)"
         }
@@ -107,6 +121,7 @@
       ]
     }
   ],
+
   "workflows": [
     {
       "name": "NotifyBigOrder",

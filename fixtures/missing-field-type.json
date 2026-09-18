@@ -1,16 +1,20 @@
 {
   "name": "OrderTracker",
+
   "forms": [
     {
+      "name": "Customer",
       "fields": [
         {
           "name": "Name"
         },
         {
-          "name": "Tier"
+          "name": "Tier",
+          "type": "picklist"
         },
         {
-          "name": "DiscountPct"
+          "name": "DiscountPct",
+          "type": "number"
         }
       ],
       "validations": []
@@ -20,16 +24,20 @@
       "name": "OrderItem",
       "fields": [
         {
-          "name": "Product"
+          "name": "Product",
+          "type": "text"
         },
         {
-          "name": "Qty"
+          "name": "Qty",
+          "type": "number"
         },
         {
-          "name": "Rate"
+          "name": "Rate",
+          "type": "currency"
         },
         {
           "name": "LineTotal",
+          "type": "currency",
           "formula": "Qty * Rate"
         }
       ],
@@ -40,33 +48,41 @@
       "name": "Order",
       "fields": [
         {
-          "name": "OrderNo"
+          "name": "OrderNo",
+          "type": "text"
         },
         {
-          "name": "OrderDate"
+          "name": "OrderDate",
+          "type": "date"
         },
         {
           "name": "Customer",
+          "type": "lookup",
           "lookup": "Customer"
         },
         {
           "name": "Items",
+          "type": "subform",
           "subform": "OrderItem"
         },
         {
           "name": "SubTotal",
+          "type": "currency",
           "formula": "Sum(Items.LineTotal)"
         },
         {
           "name": "Discount",
+          "type": "currency",
           "formula": "SubTotal * Customer.DiscountPct / 100"
         },
         {
           "name": "Total",
+          "type": "currency",
           "formula": "SubTotal - Discount"
         },
         {
           "name": "Label",
+          "type": "text",
           "formula": "Concat(OrderNo, \" - \", Customer.Name)"
         }
       ],
@@ -82,6 +98,35 @@
       ]
     }
   ],
-  "reports": [],
-  "workflows": []
+
+  "reports": [
+    {
+      "name": "BigOrders",
+      "filter": "Total > 10000",
+      "sort": "Total desc",
+      "columns": [
+        "OrderNo",
+        "Customer.Name",
+        "Total",
+        "Discount"
+      ]
+    },
+    {
+      "name": "GoldCustomerOrders",
+      "filter": "Customer.Tier == \"Gold\"",
+      "sort": "OrderDate desc",
+      "columns": [
+        "OrderNo",
+        "Total"
+      ]
+    }
+  ],
+
+  "workflows": [
+    {
+      "name": "NotifyBigOrder",
+      "condition": "Total > 10000",
+      "action": "notify(Customer.Name)"
+    }
+  ]
 }
