@@ -3,7 +3,6 @@
 
   "forms": [
     {
-      "name": "Customer",
       "fields": [
         {
           "name": "Name",
