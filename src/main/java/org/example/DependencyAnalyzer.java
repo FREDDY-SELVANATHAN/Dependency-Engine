@@ -27,4 +27,13 @@ public class DependencyAnalyzer {
 
         return listener.getDependencies();
     }
+
+    public List<String> analyzeField(Field field) {
+
+        if (field.getFormula() == null || field.getFormula().isBlank()) {
+            return List.of();
+        }
+
+        return analyze(field.getFormula());
+    }
 }
