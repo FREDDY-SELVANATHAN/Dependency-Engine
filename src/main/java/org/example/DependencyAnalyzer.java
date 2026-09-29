@@ -36,4 +36,27 @@ public class DependencyAnalyzer {
 
         return analyze(field.getFormula());
     }
+
+    public DependencyGraph buildGraph(App app) {
+
+        DependencyGraph graph = new DependencyGraph();
+
+        for (Form form : app.getForms()) {
+
+            for (Field field : form.getFields()) {
+
+                List<String> dependencies = analyzeField(field);
+
+                for (String dependency : dependencies) {
+
+                    graph.addDependency(
+                            field.getName(),
+                            dependency
+                    );
+                }
+            }
+        }
+
+        return graph;
+    }
 }
