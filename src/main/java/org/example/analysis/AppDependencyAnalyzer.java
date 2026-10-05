@@ -1,8 +1,12 @@
-package org.example;
+package org.example.analysis;
+
+import org.example.model.App;
+import org.example.model.Field;
+import org.example.model.Form;
+import org.example.parser.DependencyAnalyzer;
 
 import java.util.ArrayList;
 import java.util.List;
-
 public class AppDependencyAnalyzer {
 
     private final DependencyAnalyzer dependencyAnalyzer;

@@ -1,7 +1,15 @@
-package org.example;
+package org.example.parser;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
+
+import org.example.ExpressionLexer;
+import org.example.ExpressionParser;
+
+import org.example.graph.DependencyGraph;
+import org.example.model.App;
+import org.example.model.Field;
+import org.example.model.Form;
 
 import java.util.List;
 

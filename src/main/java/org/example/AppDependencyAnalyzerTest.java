@@ -1,7 +1,11 @@
 package org.example;
 
-import java.util.List;
+import org.example.analysis.AppDependencyAnalyzer;
+import org.example.analysis.FieldDependency;
+import org.example.loader.AppLoader;
+import org.example.model.App;
 
+import java.util.List;
 public class AppDependencyAnalyzerTest {
 
     public static void main(String[] args) {

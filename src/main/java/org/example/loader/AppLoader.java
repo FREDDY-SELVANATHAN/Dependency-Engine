@@ -1,11 +1,14 @@
-package org.example;
+package org.example.loader;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.example.model.App;
+import org.example.model.Field;
+import org.example.model.Form;
+
 import java.io.File;
 import java.io.IOException;
-
 public class AppLoader {
     private final ObjectMapper mapper;
 

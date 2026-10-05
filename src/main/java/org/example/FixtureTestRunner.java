@@ -1,7 +1,9 @@
 package org.example;
 
-import java.io.File;
+import org.example.loader.AppLoader;
+import org.example.model.App;
 
+import java.io.File;
 public class FixtureTestRunner {
 
     public static void main(String[] args) {

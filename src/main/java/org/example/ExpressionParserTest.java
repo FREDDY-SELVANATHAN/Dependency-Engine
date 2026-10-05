@@ -2,7 +2,9 @@ package org.example;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-
+import org.example.ExpressionLexer;
+import org.example.ExpressionParser;
+import org.example.parser.DependencyListener;
 public class ExpressionParserTest {
 
     public static void main(String[] args) {

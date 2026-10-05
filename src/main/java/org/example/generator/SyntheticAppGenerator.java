@@ -1,6 +1,9 @@
-package org.example;
+package org.example.generator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.model.App;
+import org.example.model.Field;
+import org.example.model.Form;
 
 import java.io.File;
 import java.io.IOException;

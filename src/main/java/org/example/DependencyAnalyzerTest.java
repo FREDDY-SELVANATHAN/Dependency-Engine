@@ -1,7 +1,8 @@
 package org.example;
 
-import java.util.List;
+import org.example.parser.DependencyListener;
 
+import java.util.List;
 public class DependencyAnalyzerTest {
 
     public static void main(String[] args) {

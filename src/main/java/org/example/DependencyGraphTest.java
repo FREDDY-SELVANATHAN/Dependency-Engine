@@ -1,5 +1,9 @@
 package org.example;
 
+import org.example.graph.DependencyGraph;
+import org.example.loader.AppLoader;
+import org.example.model.App;
+import org.example.parser.DependencyAnalyzer;
 public class DependencyGraphTest {
 
     public static void main(String[] args) throws Exception {

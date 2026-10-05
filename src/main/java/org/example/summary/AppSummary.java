@@ -1,4 +1,7 @@
-package org.example;
+package org.example.summary;
+
+import org.example.model.App;
+import org.example.model.Form;
 
 public class AppSummary {
 

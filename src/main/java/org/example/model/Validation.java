@@ -1,5 +1,4 @@
-package org.example;
-
+package org.example.model;
 public class Validation {
     private String name;
     private String condition;

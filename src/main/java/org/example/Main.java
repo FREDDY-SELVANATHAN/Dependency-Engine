@@ -1,5 +1,14 @@
 package org.example;
 
+import org.example.generator.SyntheticAppGenerator;
+import org.example.loader.AppLoader;
+import org.example.model.App;
+import org.example.model.Form;
+import org.example.model.Field;
+import org.example.model.Validation;
+import org.example.model.Report;
+import org.example.model.Workflow;
+
 public class Main {
     public static void main(String[] args)throws Exception {
 
