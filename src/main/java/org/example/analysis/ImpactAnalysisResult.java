@@ -24,8 +24,7 @@ public class ImpactAnalysisResult {
         this.directImpact = new LinkedHashSet<>(directImpact);
         this.indirectImpact = new LinkedHashSet<>(indirectImpact);
         this.evaluationOrder = List.copyOf(evaluationOrder);
-        this.impactPaths = List.copyOf(impactPaths);
-    }
+        this.impactPaths = impactPaths.stream().map(List::copyOf).toList();    }
     public List<List<String>> getImpactPaths(){
         return impactPaths;
     }
@@ -52,6 +51,7 @@ public class ImpactAnalysisResult {
                 ", directImpact=" + directImpact +
                 ", indirectImpact=" + indirectImpact +
                 ", evaluationOrder=" + evaluationOrder +
+                ", impactPaths=" + impactPaths +
                 '}';
     }
 }

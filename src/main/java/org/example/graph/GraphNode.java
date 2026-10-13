@@ -1,6 +1,7 @@
 package org.example.graph;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -22,11 +23,11 @@ public class GraphNode {
     }
 
     public List<Dependency> getOutgoingDependencies() {
-        return outgoingDependencies;
+        return Collections.unmodifiableList(outgoingDependencies);
     }
 
     public List<Dependency> getIncomingDependencies() {
-        return incomingDependencies;
+        return Collections.unmodifiableList(incomingDependencies);
     }
 
     public void addOutgoingDependency(Dependency dependency) {
