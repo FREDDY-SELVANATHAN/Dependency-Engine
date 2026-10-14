@@ -1,9 +1,12 @@
+
 package org.example.analysis;
 
 import org.example.graph.DependencyGraph;
 
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 public class ImpactAnalyzer {
@@ -14,6 +17,8 @@ public class ImpactAnalyzer {
         this.graph = graph;
     }
 
+
+
     public ImpactAnalysisResult analyze(String changedField) {
 
         Set<String> directImpact =
@@ -21,29 +26,37 @@ public class ImpactAnalyzer {
                         graph.getDependents(changedField)
                 );
 
-        Set<String> allImpact =
-                new LinkedHashSet<>(
-                        graph.getAllDependents(changedField)
-                );
+        Set<String> indirectImpact = new LinkedHashSet<>();
+        Set<String> visited = new LinkedHashSet<>();
+        Queue<String> queue = new LinkedList<>();
 
-        // Remove direct impact to leave only indirect impact.
-        Set<String> indirectImpact =
-                new LinkedHashSet<>(allImpact);
+        visited.add(changedField);
+        queue.add(changedField);
+
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+
+            for (String dependent : graph.getDependents(current)) {
+                if (visited.add(dependent)) {
+                    queue.add(dependent);
+
+                    if (!directImpact.contains(dependent)) {
+                        indirectImpact.add(dependent);
+                    }
+                }
+            }
+        }
 
         indirectImpact.removeAll(directImpact);
-
-        List<String> evaluationOrder =
-                graph.getEvaluationOrder();
-
-        List<List<String>> impactPaths =
-                graph.getImpactPaths(changedField);
 
         return new ImpactAnalysisResult(
                 changedField,
                 directImpact,
                 indirectImpact,
-                evaluationOrder,
-                impactPaths
+                graph.getEvaluationOrder(),
+                graph.getImpactPaths(changedField)
         );
     }
+
+
 }

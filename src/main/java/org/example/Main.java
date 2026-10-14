@@ -1,195 +1,223 @@
 
 package org.example;
 
-import org.example.generator.SyntheticAppGenerator;
 import org.example.loader.AppLoader;
 import org.example.model.App;
 import org.example.model.Form;
 import org.example.model.Field;
-import org.example.model.Validation;
-import org.example.model.Report;
-import org.example.model.Workflow;
 
 import org.example.analysis.AppDependencyAnalyzer;
 import org.example.analysis.UnknownFieldReference;
+import org.example.analysis.FormulaValidationError;
 import org.example.analysis.ImpactAnalyzer;
 import org.example.analysis.ImpactAnalysisResult;
+import org.example.analysis.ComponentDependency;
+
 import org.example.parser.DependencyAnalyzer;
 import org.example.graph.DependencyGraph;
+
+import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        // 1. Generate synthetic application data
-        SyntheticAppGenerator generator = new SyntheticAppGenerator();
+        if (args.length < 1 || args.length > 2) {
+            System.out.println("Usage:");
+            System.out.println("Main <app.json> [Form.Field]");
+            return;
+        }
 
-        App generatedApp = generator.generate(10, 100);
-        generator.saveAsJson(generatedApp, "generated-app.json");
+        String appPath = args[0];
+        String changedField = args.length == 2 ? args[1] : null;
 
-        System.out.println("Generated synthetic app successfully!");
-
-        // 2. Load the generated application
+        // 1. Load application
         AppLoader loader = new AppLoader();
-        App app = loader.load("generated-app.json");
+        App app = loader.load(appPath);
 
-        System.out.println("\nApp name: " + app.getName());
+        System.out.println("App name: " + app.getName());
 
         int totalFields = 0;
 
-        for (Form form : app.getForms()) {
-            totalFields += form.getFields().size();
-        }
-
-        System.out.println("Number of forms: " + app.getForms().size());
-        System.out.println("Total fields: " + totalFields);
-
-        // 3. Print forms, fields, and validations
-        System.out.println("\n========== APPLICATION DETAILS ==========");
-
-        for (Form form : app.getForms()) {
-
-            System.out.println("\nForm: " + form.getName());
-
-            for (Field field : form.getFields()) {
-                System.out.println(
-                        "Field: " + field.getName()
-                                + "\nType: " + field.getType()
-                );
-            }
-
-            if (form.getValidations() != null) {
-                for (Validation validation : form.getValidations()) {
-                    System.out.println(
-                            "Validation: " + validation.getName()
-                                    + "\nCondition: " + validation.getCondition()
-                    );
+        if (app.getForms() != null) {
+            for (Form form : app.getForms()) {
+                if (form != null && form.getFields() != null) {
+                    totalFields += form.getFields().size();
                 }
             }
         }
 
-        // 4. Print reports
-        System.out.println("\n========== REPORTS ==========");
+        System.out.println("Number of forms: "
+                + (app.getForms() == null ? 0 : app.getForms().size()));
+        System.out.println("Total fields: " + totalFields);
 
-        if (app.getReports() != null) {
-            for (Report report : app.getReports()) {
-                System.out.println(
-                        "Report: " + report.getName()
-                                + " | Filter: " + report.getFilter()
-                                + " | Sort: " + report.getSort()
-                );
+        AppDependencyAnalyzer appAnalyzer =
+                new AppDependencyAnalyzer();
 
-                System.out.println("Columns: " + report.getColumns());
-            }
-        }
+        // 2. Validate field references
+        System.out.println(
+                "\n========== FIELD REFERENCE VALIDATION ==========");
 
-        // 5. Print workflows
-        System.out.println("\n========== WORKFLOWS ==========");
-
-        if (app.getWorkflows() != null) {
-            for (Workflow workflow : app.getWorkflows()) {
-                System.out.println(
-                        "Workflow: " + workflow.getName()
-                                + " | Condition: " + workflow.getCondition()
-                                + " | Action: " + workflow.getAction()
-                );
-            }
-        }
-
-        // 6. Validate field references
-        System.out.println("\n========== FIELD REFERENCE VALIDATION ==========");
-
-        AppDependencyAnalyzer appAnalyzer = new AppDependencyAnalyzer();
-
-        var unknownReferences = appAnalyzer.findUnknownReferences(app);
+        List<UnknownFieldReference> unknownReferences =
+                appAnalyzer.findUnknownReferences(app);
 
         if (unknownReferences.isEmpty()) {
-            System.out.println(
-                    "Validation passed: no unknown field references."
-            );
+            System.out.println("No unknown formula field references.");
         } else {
-            System.out.println("Unknown field references found:");
+            unknownReferences.forEach(System.out::println);
+        }
 
-            for (UnknownFieldReference reference : unknownReferences) {
-                System.out.println(reference);
+        // 3. Validate formula syntax
+        System.out.println("\n========== FORMULA VALIDATION ==========");
+
+        List<FormulaValidationError> formulaErrors =
+                appAnalyzer.findFormulaErrors(app);
+
+        if (formulaErrors.isEmpty()) {
+            System.out.println("No malformed formulas found.");
+        } else {
+            formulaErrors.forEach(System.out::println);
+        }
+
+        // 4. Analyze reports, validations, and workflows
+        System.out.println("\n========== COMPONENT DEPENDENCIES ==========");
+
+        List<ComponentDependency> componentDependencies =
+                appAnalyzer.analyzeComponents(app);
+
+        if (componentDependencies.isEmpty()) {
+            System.out.println("No component dependencies found.");
+        } else {
+            for (ComponentDependency component : componentDependencies) {
+                System.out.println(
+                        component.getComponentType() + " | "
+                                + component.getComponentName()
+                                + " | Dependencies: "
+                                + component.getDependencies()
+                );
             }
         }
 
-        // 7. Parse formulas and build the dependency graph
+        // 5. Build dependency graph
         System.out.println("\n========== DEPENDENCY GRAPH ==========");
 
-        DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer();
+        DependencyAnalyzer dependencyAnalyzer =
+                new DependencyAnalyzer();
 
-        DependencyGraph graph = dependencyAnalyzer.buildGraph(app);
+        DependencyGraph graph =
+                dependencyAnalyzer.buildGraph(app);
 
         graph.printGraph();
 
-        // 8. Calculate evaluation order
+        // 6. Evaluation order
         System.out.println("\n========== EVALUATION ORDER ==========");
 
         try {
             System.out.println(graph.getEvaluationOrder());
         } catch (IllegalStateException e) {
             System.out.println(
-                    "Cannot determine evaluation order: " + e.getMessage()
+                    "Cannot determine evaluation order: "
+                            + e.getMessage()
             );
         }
 
-        // 9. Perform impact analysis using qualified field names
+        // 7. Impact analysis
         System.out.println("\n========== IMPACT ANALYSIS ==========");
-
-        String changedField = null;
-
-        for (Form form : app.getForms()) {
-            for (Field field : form.getFields()) {
-
-                String qualifiedFieldName =
-                        form.getName() + "." + field.getName();
-
-                if (!graph.getDependents(qualifiedFieldName).isEmpty()) {
-                    changedField = qualifiedFieldName;
-                    break;
-                }
-            }
-
-            if (changedField != null) {
-                break;
-            }
-        }
 
         if (changedField == null) {
             System.out.println(
-                    "No field with dependents was found. "
-                            + "Check the generated formulas and dependency graph."
+                    "No changed field provided. Pass Form.Field "
+                            + "as the second argument."
             );
+
+        } else if (!fieldExists(app, changedField)) {
+            System.out.println("Unknown changed field: " + changedField);
+
         } else {
             System.out.println("Changed field: " + changedField);
 
             try {
-                ImpactAnalyzer impactAnalyzer = new ImpactAnalyzer(graph);
+                ImpactAnalyzer impactAnalyzer =
+                        new ImpactAnalyzer(graph);
 
                 ImpactAnalysisResult result =
                         impactAnalyzer.analyze(changedField);
 
                 System.out.println(
-                        "Direct impact: " + result.getDirectImpact()
+                        "Direct formula impact: "
+                                + result.getDirectImpact()
                 );
 
                 System.out.println(
-                        "Indirect impact: " + result.getIndirectImpact()
+                        "Indirect formula impact: "
+                                + result.getIndirectImpact()
                 );
 
                 System.out.println(
                         "Impact paths: " + result.getImpactPaths()
                 );
 
+                String shortFieldName =
+                        changedField.substring(
+                                changedField.indexOf('.') + 1
+                        );
+
+                System.out.println("Affected components:");
+
+                boolean found = false;
+
+                for (ComponentDependency component : componentDependencies) {
+                    boolean affected =
+                            component.getDependencies().contains(changedField)
+                                    || component.getDependencies()
+                                    .contains(shortFieldName);
+
+                    if (affected) {
+                        System.out.println(
+                                "  " + component.getComponentType()
+                                        + " | " + component.getComponentName()
+                        );
+                        found = true;
+                    }
+                }
+
+                if (!found) {
+                    System.out.println(
+                            "No directly affected components found."
+                    );
+                }
+
             } catch (IllegalStateException e) {
                 System.out.println(
-                        "Impact analysis could not complete: " + e.getMessage()
+                        "Impact analysis failed: " + e.getMessage()
                 );
             }
         }
 
         System.out.println("\n========== ANALYSIS COMPLETED ==========");
+    }
+
+    private static boolean fieldExists(App app, String qualifiedName) {
+
+        if (app == null || app.getForms() == null
+                || qualifiedName == null) {
+            return false;
+        }
+
+        for (Form form : app.getForms()) {
+            if (form == null || form.getFields() == null) {
+                continue;
+            }
+
+            for (Field field : form.getFields()) {
+                if (field != null
+                        && qualifiedName.equals(
+                        form.getName() + "." + field.getName())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

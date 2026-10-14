@@ -1,3 +1,4 @@
+
 grammar Expression;
 
 @header {
@@ -5,7 +6,23 @@ package org.example;
 }
 
 expression
-    : additiveExpression EOF
+    : logicalOrExpression EOF
+    ;
+
+logicalOrExpression
+    : logicalAndExpression (OR logicalAndExpression)*
+    ;
+
+logicalAndExpression
+    : equalityExpression (AND equalityExpression)*
+    ;
+
+equalityExpression
+    : relationalExpression (('==' | '!=') relationalExpression)*
+    ;
+
+relationalExpression
+    : additiveExpression (('<=' | '>=' | '<' | '>') additiveExpression)*
     ;
 
 additiveExpression
@@ -23,9 +40,9 @@ multiplicativeExpression
 primaryExpression
     : NUMBER
     | STRING
-    | fieldReference
     | functionCall
-    | '(' additiveExpression ')'
+    | fieldReference
+    | '(' logicalOrExpression ')'
     ;
 
 fieldReference
@@ -37,7 +54,15 @@ functionCall
     ;
 
 argumentList
-    : additiveExpression (',' additiveExpression)*
+    : logicalOrExpression (',' logicalOrExpression)*
+    ;
+
+AND
+    : [aA][nN][dD]
+    ;
+
+OR
+    : [oO][rR]
     ;
 
 NUMBER
