@@ -19,6 +19,7 @@ public class ImpactAnalyzer {
 
 
 
+
     public ImpactAnalysisResult analyze(String changedField) {
 
         Set<String> directImpact =
@@ -26,28 +27,29 @@ public class ImpactAnalyzer {
                         graph.getDependents(changedField)
                 );
 
-        Set<String> indirectImpact = new LinkedHashSet<>();
-        Set<String> visited = new LinkedHashSet<>();
-        Queue<String> queue = new LinkedList<>();
+        Set<String> allImpact =
+                new LinkedHashSet<>(
+                        graph.getAllDependents(changedField)
+                );
 
-        visited.add(changedField);
-        queue.add(changedField);
+        Set<String> indirectImpact =
+                new LinkedHashSet<>(allImpact);
 
-        while (!queue.isEmpty()) {
-            String current = queue.poll();
+        indirectImpact.removeAll(directImpact);
 
-            for (String dependent : graph.getDependents(current)) {
-                if (visited.add(dependent)) {
-                    queue.add(dependent);
+        // Remove direct links that are also reachable through
+        // another impacted formula.
+        for (String direct : new LinkedHashSet<>(directImpact)) {
+            Set<String> downstream = graph.getAllDependents(direct);
 
-                    if (!directImpact.contains(dependent)) {
-                        indirectImpact.add(dependent);
-                    }
+            for (String candidate : downstream) {
+                if (directImpact.contains(candidate)) {
+                    indirectImpact.add(candidate);
                 }
             }
         }
 
-        indirectImpact.removeAll(directImpact);
+        directImpact.removeAll(indirectImpact);
 
         return new ImpactAnalysisResult(
                 changedField,
@@ -57,6 +59,7 @@ public class ImpactAnalyzer {
                 graph.getImpactPaths(changedField)
         );
     }
+
 
 
 }
