@@ -1,19 +1,18 @@
-
 package org.example.analysis;
 
 import org.example.model.App;
 import org.example.model.Field;
 import org.example.model.Form;
+import org.example.model.Report;
+import org.example.model.Validation;
+import org.example.model.Workflow;
 import org.example.parser.DependencyAnalyzer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import org.example.model.Report;
-import org.example.model.Validation;
-import org.example.model.Workflow;
-import java.util.LinkedHashSet;
 
 public class AppDependencyAnalyzer {
 
@@ -24,7 +23,6 @@ public class AppDependencyAnalyzer {
     }
 
     public List<FieldDependency> analyze(App app) {
-
         List<FieldDependency> results = new ArrayList<>();
 
         if (app == null || app.getForms() == null) {
@@ -58,22 +56,13 @@ public class AppDependencyAnalyzer {
     }
 
     public List<UnknownFieldReference> findUnknownReferences(App app) {
-
         List<UnknownFieldReference> issues = new ArrayList<>();
 
         if (app == null || app.getForms() == null) {
             return issues;
         }
 
-        Map<String, Form> formsByName = new HashMap<>();
-
-        for (Form form : app.getForms()) {
-            if (form != null
-                    && form.getName() != null
-                    && !form.getName().isBlank()) {
-                formsByName.put(form.getName(), form);
-            }
-        }
+        Map<String, Form> formsByName = buildFormsMap(app);
 
         for (Form form : app.getForms()) {
             if (form == null || form.getFields() == null) {
@@ -92,7 +81,6 @@ public class AppDependencyAnalyzer {
                 try {
                     references = dependencyAnalyzer.analyzeField(field);
                 } catch (IllegalArgumentException exception) {
-                    // Syntax errors are reported separately by findFormulaErrors().
                     continue;
                 }
 
@@ -115,87 +103,91 @@ public class AppDependencyAnalyzer {
             String reference,
             Form currentForm,
             Map<String, Form> formsByName) {
+        return resolveReferenceForm(
+                reference, currentForm, formsByName) != null;
+    }
 
-        if (reference == null || reference.isBlank()) {
-            return false;
+    private Field resolveReferenceForm(
+            String reference,
+            Form currentForm,
+            Map<String, Form> formsByName) {
+
+        if (reference == null || reference.isBlank()
+                || currentForm == null) {
+            return null;
         }
 
         String[] parts = reference.split("\\.", -1);
 
         for (String part : parts) {
             if (part.isBlank()) {
-                return false;
+                return null;
             }
         }
 
         Form targetForm = currentForm;
         int index = 0;
 
-        // Support explicitly form-qualified paths such as Order.Customer.Name.
         if (parts[0].equals(currentForm.getName())) {
             index = 1;
         } else if (findField(currentForm, parts[0]) != null) {
-            // Prefer a field in the current form.
-            // Example: Order.Customer.DiscountPct.
             index = 0;
         } else if (formsByName.containsKey(parts[0])) {
-            // Preserve explicit cross-form references such as Customer.DiscountPct.
             targetForm = formsByName.get(parts[0]);
             index = 1;
         } else {
-            return false;
+            return null;
         }
 
         if (index >= parts.length) {
-            return false;
+            return null;
         }
 
         Field currentField = findField(targetForm, parts[index]);
 
         if (currentField == null) {
-            return false;
+            return null;
         }
 
         index++;
 
         while (index < parts.length) {
-
-            // A remaining path segment must follow a lookup or subform.
             String relatedFormName = getRelatedFormName(currentField);
 
             if (relatedFormName == null) {
-                return false;
+                return null;
             }
 
             targetForm = formsByName.get(relatedFormName);
 
             if (targetForm == null) {
-                return false;
+                return null;
             }
 
             currentField = findField(targetForm, parts[index]);
 
             if (currentField == null) {
-                return false;
+                return null;
             }
 
             index++;
         }
 
-        return true;
+        return currentField;
     }
 
     private String getRelatedFormName(Field field) {
-
         if (field == null) {
             return null;
         }
 
-        if (field.getLookup() != null && !field.getLookup().isBlank()) {
+        if (field.getLookup() != null
+                && !field.getLookup().isBlank()) {
             return field.getLookup();
         }
 
-        if (field.getSubform() != null && !field.getSubform().isBlank()) {
+        if (field.getSubform() != null
+                && !field.getSubform().isBlank()) {
             return field.getSubform();
         }
 
@@ -203,7 +195,6 @@ public class AppDependencyAnalyzer {
     }
 
     private Field findField(Form form, String fieldName) {
-
         if (form == null
                 || form.getFields() == null
                 || fieldName == null) {
@@ -219,6 +210,24 @@ public class AppDependencyAnalyzer {
         return null;
     }
 
+    private Map<String, Form> buildFormsMap(App app) {
+        Map<String, Form> formsByName = new HashMap<>();
+
+        if (app == null || app.getForms() == null) {
+            return formsByName;
+        }
+
+        for (Form form : app.getForms()) {
+            if (form != null
+                    && form.getName() != null
+                    && !form.getName().isBlank()) {
+                formsByName.put(form.getName(), form);
+            }
+        }
+
+        return formsByName;
+    }
+
     private String qualify(String formName, String fieldName) {
         if (formName == null || formName.isBlank()) {
             return fieldName;
@@ -228,7 +237,6 @@ public class AppDependencyAnalyzer {
     }
 
     public List<FormulaValidationError> findFormulaErrors(App app) {
-
         List<FormulaValidationError> errors = new ArrayList<>();
 
         if (app == null || app.getForms() == null) {
@@ -250,7 +258,6 @@ public class AppDependencyAnalyzer {
                 try {
                     dependencyAnalyzer.analyzeField(field);
                 } catch (IllegalArgumentException exception) {
-
                     String formName = form.getName() == null
                             ? "<unknown form>"
                             : form.getName();
@@ -274,12 +281,13 @@ public class AppDependencyAnalyzer {
     }
 
     public List<ComponentDependency> analyzeComponents(App app) {
-
         List<ComponentDependency> results = new ArrayList<>();
 
         if (app == null) {
             return results;
         }
+
+        Map<String, Form> formsByName = buildFormsMap(app);
 
         // Reports
         if (app.getReports() != null) {
@@ -292,25 +300,28 @@ public class AppDependencyAnalyzer {
                         ? "<unnamed>"
                         : report.getName();
 
+                String formName = report.getForm();
+
                 addComponentExpression(
                         results, "REPORT", name, "filter",
-                        report.getFilter());
+                        report.getFilter(), formName, app, formsByName);
 
                 addComponentExpression(
                         results, "REPORT", name, "sort",
-                        sortExpression(report.getSort()));
+                        sortExpression(report.getSort()),
+                        formName, app, formsByName);
 
                 if (report.getColumns() != null) {
                     for (String column : report.getColumns()) {
                         addComponentExpression(
                                 results, "REPORT", name, "column",
-                                column);
+                                column, formName, app, formsByName);
                     }
                 }
             }
         }
 
-        // Form validations
+        // Validations
         if (app.getForms() != null) {
             for (Form form : app.getForms()) {
                 if (form == null || form.getValidations() == null) {
@@ -331,10 +342,15 @@ public class AppDependencyAnalyzer {
                             : validation.getName();
 
                     addComponentExpression(
-                            results, "VALIDATION",
+                            results,
+                            "VALIDATION",
                             formName + "." + name,
                             "condition",
-                            validation.getCondition());
+                            validation.getCondition(),
+                            form.getName(),
+                            app,
+                            formsByName
+                    );
                 }
             }
         }
@@ -350,13 +366,15 @@ public class AppDependencyAnalyzer {
                         ? "<unnamed>"
                         : workflow.getName();
 
+                String formName = workflow.getForm();
+
                 addComponentExpression(
                         results, "WORKFLOW", name, "condition",
-                        workflow.getCondition());
+                        workflow.getCondition(), formName, app, formsByName);
 
                 addComponentExpression(
                         results, "WORKFLOW", name, "action",
-                        workflow.getAction());
+                        workflow.getAction(), formName, app, formsByName);
             }
         }
 
@@ -368,7 +386,10 @@ public class AppDependencyAnalyzer {
             String type,
             String name,
             String expressionType,
-            String expression) {
+            String expression,
+            String formName,
+            App app,
+            Map<String, Form> formsByName) {
 
         if (expression == null || expression.isBlank()) {
             return;
@@ -382,9 +403,25 @@ public class AppDependencyAnalyzer {
             try {
                 dependencies = dependencyAnalyzer.analyze(expression);
             } catch (IllegalArgumentException exception) {
-                // Do not silently interpret malformed expressions as valid.
-                // They are omitted here and will be handled by validation.
                 return;
+            }
+        }
+
+        // Keep original names for compatibility and add qualified names
+        // when the owning form is known.
+        List<String> qualifiedDependencies = new ArrayList<>();
+
+        for (String dependency : dependencies) {
+            qualifiedDependencies.add(dependency);
+
+            if (formName != null && !formName.isBlank()) {
+                String qualified = qualifyComponentReference(
+                        dependency, formName, formsByName);
+
+                if (qualified != null
+                        && !qualifiedDependencies.contains(qualified)) {
+                    qualifiedDependencies.add(qualified);
+                }
             }
         }
 
@@ -392,8 +429,83 @@ public class AppDependencyAnalyzer {
                 type,
                 name + "." + expressionType,
                 expression,
-                new ArrayList<>(new LinkedHashSet<>(dependencies))
+                new ArrayList<>(
+                        new LinkedHashSet<>(qualifiedDependencies))
         ));
+    }
+
+    private String qualifyComponentReference(
+            String reference,
+            String formName,
+            Map<String, Form> formsByName) {
+
+        if (reference == null || reference.isBlank()) {
+            return reference;
+        }
+
+        Form currentForm = formsByName.get(formName);
+
+        if (currentForm == null) {
+            return reference;
+        }
+
+        String[] parts = reference.split("\\.", -1);
+
+        for (String part : parts) {
+            if (part.isBlank()) {
+                return reference;
+            }
+        }
+
+        Form targetForm = currentForm;
+        int index = 0;
+
+        if (parts[0].equals(currentForm.getName())) {
+            index = 1;
+        } else if (findField(currentForm, parts[0]) != null) {
+            index = 0;
+        } else if (formsByName.containsKey(parts[0])) {
+            targetForm = formsByName.get(parts[0]);
+            index = 1;
+        } else {
+            return reference;
+        }
+
+        if (index >= parts.length) {
+            return reference;
+        }
+
+        Field currentField = findField(targetForm, parts[index]);
+
+        if (currentField == null) {
+            return reference;
+        }
+
+        index++;
+
+        while (index < parts.length) {
+            String relatedFormName = getRelatedFormName(currentField);
+
+            if (relatedFormName == null) {
+                return reference;
+            }
+
+            targetForm = formsByName.get(relatedFormName);
+
+            if (targetForm == null) {
+                return reference;
+            }
+
+            currentField = findField(targetForm, parts[index]);
+
+            if (currentField == null) {
+                return reference;
+            }
+
+            index++;
+        }
+
+        return qualify(targetForm.getName(), currentField.getName());
     }
 
     private String sortExpression(String sort) {
@@ -412,5 +524,4 @@ public class AppDependencyAnalyzer {
 
         return value;
     }
-
 }

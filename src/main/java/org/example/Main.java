@@ -1,4 +1,3 @@
-
 package org.example;
 
 import org.example.loader.AppLoader;
@@ -13,6 +12,9 @@ import org.example.analysis.ImpactAnalyzer;
 import org.example.analysis.ImpactAnalysisResult;
 import org.example.analysis.ComponentDependency;
 
+import org.example.schema.SchemaImpactAnalyzer;
+import org.example.schema.SchemaImpactResult;
+
 import org.example.parser.DependencyAnalyzer;
 import org.example.graph.DependencyGraph;
 
@@ -22,16 +24,32 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
+        // Schema comparison mode:
+        // compare old-app.json new-app.json
+        if (args.length > 0 && args[0].equals("compare")) {
+            if (args.length != 3) {
+                System.out.println(
+                        "Usage: Main compare <old-app.json> <new-app.json>");
+                return;
+            }
+
+            compareSchemas(args[1], args[2]);
+            return;
+        }
+
+        // Existing analysis mode:
+        // app.json [Form.Field]
         if (args.length < 1 || args.length > 2) {
             System.out.println("Usage:");
             System.out.println("Main <app.json> [Form.Field]");
+            System.out.println(
+                    "Main compare <old-app.json> <new-app.json>");
             return;
         }
 
         String appPath = args[0];
         String changedField = args.length == 2 ? args[1] : null;
 
-        // 1. Load application
         AppLoader loader = new AppLoader();
         App app = loader.load(appPath);
 
@@ -54,7 +72,7 @@ public class Main {
         AppDependencyAnalyzer appAnalyzer =
                 new AppDependencyAnalyzer();
 
-        // 2. Validate field references
+        // 1. Field reference validation
         System.out.println(
                 "\n========== FIELD REFERENCE VALIDATION ==========");
 
@@ -67,7 +85,7 @@ public class Main {
             unknownReferences.forEach(System.out::println);
         }
 
-        // 3. Validate formula syntax
+        // 2. Formula validation
         System.out.println("\n========== FORMULA VALIDATION ==========");
 
         List<FormulaValidationError> formulaErrors =
@@ -79,7 +97,7 @@ public class Main {
             formulaErrors.forEach(System.out::println);
         }
 
-        // 4. Analyze reports, validations, and workflows
+        // 3. Component dependencies
         System.out.println("\n========== COMPONENT DEPENDENCIES ==========");
 
         List<ComponentDependency> componentDependencies =
@@ -98,7 +116,7 @@ public class Main {
             }
         }
 
-        // 5. Build dependency graph
+        // 4. Dependency graph
         System.out.println("\n========== DEPENDENCY GRAPH ==========");
 
         DependencyAnalyzer dependencyAnalyzer =
@@ -109,7 +127,7 @@ public class Main {
 
         graph.printGraph();
 
-        // 6. Evaluation order
+        // 5. Evaluation order
         System.out.println("\n========== EVALUATION ORDER ==========");
 
         try {
@@ -117,18 +135,16 @@ public class Main {
         } catch (IllegalStateException e) {
             System.out.println(
                     "Cannot determine evaluation order: "
-                            + e.getMessage()
-            );
+                            + e.getMessage());
         }
 
-        // 7. Impact analysis
+        // 6. Impact analysis
         System.out.println("\n========== IMPACT ANALYSIS ==========");
 
         if (changedField == null) {
             System.out.println(
                     "No changed field provided. Pass Form.Field "
-                            + "as the second argument."
-            );
+                            + "as the second argument.");
 
         } else if (!fieldExists(app, changedField)) {
             System.out.println("Unknown changed field: " + changedField);
@@ -145,59 +161,75 @@ public class Main {
 
                 System.out.println(
                         "Direct formula impact: "
-                                + result.getDirectImpact()
-                );
+                                + result.getDirectImpact());
 
                 System.out.println(
                         "Indirect formula impact: "
-                                + result.getIndirectImpact()
-                );
+                                + result.getIndirectImpact());
 
                 System.out.println(
-                        "Impact paths: " + result.getImpactPaths()
-                );
-
-                String shortFieldName =
-                        changedField.substring(
-                                changedField.indexOf('.') + 1
-                        );
+                        "Impact paths: " + result.getImpactPaths());
 
                 System.out.println("Affected components:");
 
                 boolean found = false;
 
                 for (ComponentDependency component : componentDependencies) {
-                    boolean affected =
-                            component.getDependencies().contains(changedField)
-                                    || component.getDependencies()
-                                    .contains(shortFieldName);
-
-                    if (affected) {
+                    if (component.getDependencies().contains(changedField)) {
                         System.out.println(
                                 "  " + component.getComponentType()
-                                        + " | " + component.getComponentName()
-                        );
+                                        + " | "
+                                        + component.getComponentName());
                         found = true;
                     }
                 }
 
                 if (!found) {
                     System.out.println(
-                            "No directly affected components found."
-                    );
+                            "No directly affected components found.");
                 }
 
             } catch (IllegalStateException e) {
                 System.out.println(
-                        "Impact analysis failed: " + e.getMessage()
-                );
+                        "Impact analysis failed: " + e.getMessage());
             }
         }
 
         System.out.println("\n========== ANALYSIS COMPLETED ==========");
     }
 
-    private static boolean fieldExists(App app, String qualifiedName) {
+    private static void compareSchemas(
+            String oldPath,
+            String newPath) {
+
+        AppLoader loader = new AppLoader();
+
+        App oldApp = loader.load(oldPath);
+        App newApp = loader.load(newPath);
+
+        SchemaImpactAnalyzer analyzer =
+                new SchemaImpactAnalyzer();
+
+        List<SchemaImpactResult> results =
+                analyzer.analyze(oldApp, newApp);
+
+        System.out.println("\n========== SCHEMA CHANGE IMPACT ==========");
+
+        if (results.isEmpty()) {
+            System.out.println("No schema changes detected.");
+        } else {
+            for (SchemaImpactResult result : results) {
+                System.out.println("\n" + result);
+            }
+        }
+
+        System.out.println(
+                "\n========== SCHEMA COMPARISON COMPLETED ==========");
+    }
+
+    private static boolean fieldExists(
+            App app,
+            String qualifiedName) {
 
         if (app == null || app.getForms() == null
                 || qualifiedName == null) {
